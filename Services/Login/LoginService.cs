@@ -1,0 +1,72 @@
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using System.Security.Claims;
+using System.Text;
+using UserManagement;
+using UserManagement.Dtos;
+using UserManagementServices.JWT;
+
+namespace Services.Login
+{
+    public class LoginService : ControllerBase
+    {
+        private readonly UserManager<AppUser> _userManager;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public LoginService(UserManager<AppUser> userManager, IHttpContextAccessor httpContextAccessor)
+        {
+            _userManager = userManager;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        public async Task<TokenResponse> LoginAsync([FromBody] LoginParamsDto loginDto)
+        {
+            var user = await _userManager.FindByEmailAsync(loginDto.Email);
+            if (user == null)
+            {
+                return new TokenResponse { Token = "", Message = ["Incorrect email or password."] };
+            }
+            var isPasswordValid = await _userManager.CheckPasswordAsync(user, loginDto.Password);
+
+            if (!isPasswordValid)
+            {
+                return new TokenResponse { Token = "", Message = ["Incorrect email or password."] };
+            }
+
+            if (user != null && isPasswordValid)
+            {
+
+                string token = JWT.GenerateJwtToken(user);
+                return new TokenResponse { Token = token };
+            }
+
+            return new TokenResponse { Token = "", Message = ["An unexpected error has occurred."] };
+        }
+
+        public async Task<TokenResponse> SendingNewToken()
+        {
+            var email = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (email == null)
+            {
+                return new TokenResponse { Token = "", IsValid = false };
+            }
+
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return new TokenResponse { Token = "", IsValid = false };
+            }
+
+            string token = JWT.GenerateJwtToken(user);
+            return new TokenResponse { Token = token, IsValid = true };
+        }
+
+        public class TokenResponse : BaseValidResponse
+        {
+            public string Token { get; set; }
+        }
+    }
+}

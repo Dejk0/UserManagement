@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Tests/">
+    <Project Path="UserManagerTest/UserManagementTests.csproj" />
+  </Folder>
+  <Folder Name="/UserManagement/">
+    <Project Path="Services/UserManagementServices.csproj" />
+    <Project Path="UserManagement/UserManagement.csproj" />
+  </Folder>
+</Solution>
