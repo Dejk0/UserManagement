@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace UserManagement.Dtos
+namespace UserManagement.Dtos.Auth
 {
     public class LoginParamsDto
     {

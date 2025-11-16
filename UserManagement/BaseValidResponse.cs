@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Services
+namespace UserManagement
 {
     public class BaseValidResponse
     {

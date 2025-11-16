@@ -1,10 +1,11 @@
-﻿namespace Services.Logout
+﻿using UserManagement;
+
+namespace Services.Logout
 {
     public class LogoutService
     {
         public LogoutService()
         {
-            
         }
 
         public async Task<BaseValidResponse> LogoutAsync()

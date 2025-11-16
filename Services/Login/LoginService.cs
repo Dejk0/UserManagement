@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using System.Security.Claims;
 using System.Text;
 using UserManagement;
-using UserManagement.Dtos;
+using UserManagement.Dtos.Auth;
 using UserManagementServices.JWT;
 
 namespace Services.Login
@@ -37,9 +37,11 @@ namespace Services.Login
 
             if (user != null && isPasswordValid)
             {
-
-                string token = JWT.GenerateJwtToken(user);
-                return new TokenResponse { Token = token };
+                if (DataContext.AuthType == Authentication.Type.Jwt)
+                {
+                    string token = JWT.GenerateJwtToken(user);
+                    return new TokenResponse { Token = token };
+                }
             }
 
             return new TokenResponse { Token = "", Message = ["An unexpected error has occurred."] };
@@ -60,13 +62,18 @@ namespace Services.Login
                 return new TokenResponse { Token = "", IsValid = false };
             }
 
-            string token = JWT.GenerateJwtToken(user);
-            return new TokenResponse { Token = token, IsValid = true };
+            if (DataContext.AuthType == Authentication.Type.Jwt)
+            {
+                string token = JWT.GenerateJwtToken(user);
+                return new TokenResponse { Token = token, IsValid = true };
+            }
+
+            return new TokenResponse { IsValid = true, Message = ["Missing authType"]  };
         }
 
         public class TokenResponse : BaseValidResponse
         {
-            public string Token { get; set; }
+            public string? Token { get; set; }
         }
     }
 }

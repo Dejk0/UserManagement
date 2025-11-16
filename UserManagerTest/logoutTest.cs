@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Services.Logout;
 
-namespace BabyNameMatcher.Tests.Serviceses.Auth
+namespace UserManagementTests
 {
     public class LogoutServiceTests
     {
@@ -22,7 +22,7 @@ namespace BabyNameMatcher.Tests.Serviceses.Auth
             var result = await _logoutService.LogoutAsync();
 
             // Assert
-            Assert.Equal(result.IsValid, true);
+            Assert.True(result.IsValid);
         }
     }
 }

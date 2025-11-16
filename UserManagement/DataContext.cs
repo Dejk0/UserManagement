@@ -4,6 +4,7 @@ namespace UserManagement
 {
     public class DataContext : IdentityDbContext<AppUser>
     {
+        public static Authentication.Type AuthType = Authentication.Type.Session;
         public DataContext(DbContextOptions<DataContext> options)
         : base(options)
         {            

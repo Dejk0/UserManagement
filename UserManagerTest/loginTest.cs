@@ -1,12 +1,14 @@
 ﻿
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Services.Login;
 using System.Security.Claims;
 using UserManagement;
 using UserManagement.Dtos;
+using UserManagement.Dtos.Auth;
 
 namespace UserManagementTests;
 
@@ -34,7 +36,7 @@ public class LoginServiceTests
 
 
     [Fact]
-    public async Task LoginAsync_WithValidCredentials_ReturnsToken()
+    public async Task LoginAsync_JWT_WithValidCredentials_ReturnsToken()
     {
         // Arrange
         var user = new AppUser { Id = "123", Email = "test@example.com", UserName = "TestUser" };
@@ -44,12 +46,14 @@ public class LoginServiceTests
                         .ReturnsAsync(user);
         _userManagerMock.Setup(m => m.CheckPasswordAsync(user, loginDto.Password))
                         .ReturnsAsync(true);
+        DataContext.AuthType = Authentication.Type.Jwt;
 
-        // Act
+            // Act
         var result = await _loginService.LoginAsync(loginDto);
 
         // Assert
         Assert.False(string.IsNullOrWhiteSpace(result.Token));
+
     }
 
     [Fact]
@@ -131,6 +135,7 @@ public class LoginServiceTests
 
         _userManagerMock.Setup(m => m.FindByEmailAsync(email))
                         .ReturnsAsync(user);
+        DataContext.AuthType = Authentication.Type.Jwt;
 
         // Act
         var result = await _loginService.SendingNewToken();
