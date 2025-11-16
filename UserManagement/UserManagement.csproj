@@ -12,4 +12,10 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="D:\Users\deakt\source\repos\SajatOldalBE\Projects\Engines\Engines\Engines.csproj" />
+    <ProjectReference Include="D:\Users\deakt\source\repos\SajatOldalBE\Projects\Loc\Localization\Localization.csproj" />
+    <ProjectReference Include="D:\Users\deakt\source\repos\SajatOldalBE\Projects\StrengthOfMaterials\StrengthOfMaterials.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json.Linq;
 using System.Security.Claims;
 using System.Text;
 using UserManagement;
@@ -13,12 +14,14 @@ namespace Services.Login
     public class LoginService : ControllerBase
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly SignInManager<AppUser> _signInManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public LoginService(UserManager<AppUser> userManager, IHttpContextAccessor httpContextAccessor)
+        public LoginService(UserManager<AppUser> userManager, IHttpContextAccessor httpContextAccessor, SignInManager<AppUser> signInManager)
         {
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
+            _signInManager = signInManager;
         }
 
         public async Task<TokenResponse> LoginAsync([FromBody] LoginParamsDto loginDto)
@@ -42,6 +45,12 @@ namespace Services.Login
                     string token = JWT.GenerateJwtToken(user);
                     return new TokenResponse { Token = token };
                 }
+                else 
+                {
+                    await _signInManager.SignInAsync(user, isPasswordValid);
+                    return new TokenResponse { Token = "", IsValid = true };
+                }
+
             }
 
             return new TokenResponse { Token = "", Message = ["An unexpected error has occurred."] };
