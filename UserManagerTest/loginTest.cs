@@ -1,5 +1,6 @@
 ﻿
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +16,7 @@ namespace UserManagementTests;
 public class LoginServiceTests
 {
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
+    private readonly Mock<SignInManager<AppUser>> _singinManagerMock;
     private readonly Mock<IConfiguration> _configMock;
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
     private readonly LoginService _loginService;
@@ -23,6 +25,7 @@ public class LoginServiceTests
     {
         var store = new Mock<IUserStore<AppUser>>();
         _userManagerMock = new Mock<UserManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
+        _singinManagerMock = new Mock<SignInManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
 
         _configMock = new Mock<IConfiguration>();
         _configMock.Setup(c => c["Jwt:Key"]).Returns("this_is_a_super_secret_key_123456");
@@ -31,7 +34,7 @@ public class LoginServiceTests
 
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
 
-        _loginService = new LoginService(_userManagerMock.Object, _httpContextAccessorMock.Object);
+        _loginService = new LoginService(_userManagerMock.Object, _httpContextAccessorMock.Object, _singinManagerMock.Object);
     }
 
 
