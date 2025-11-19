@@ -1,6 +1,5 @@
 ﻿
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -8,24 +7,49 @@ using Moq;
 using Services.Login;
 using System.Security.Claims;
 using UserManagement;
-using UserManagement.Dtos;
 using UserManagement.Dtos.Auth;
 
 namespace UserManagementTests;
 
 public class LoginServiceTests
 {
+
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
-    private readonly Mock<SignInManager<AppUser>> _singinManagerMock;
+    private readonly SignInManager<AppUser> _signInManager; // nem Mock<SignInManager>
     private readonly Mock<IConfiguration> _configMock;
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
     private readonly LoginService _loginService;
 
     public LoginServiceTests()
     {
+        // mock a user store-hoz (szükséges a UserManager mockhoz)
         var store = new Mock<IUserStore<AppUser>>();
-        _userManagerMock = new Mock<UserManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
-        _singinManagerMock = new Mock<SignInManager<AppUser>>(store.Object, null, null, null, null, null, null, null, null);
+
+        // CREATE a Mock<UserManager<TUser>> with the long constructor signature
+        _userManagerMock = new Mock<UserManager<AppUser>>(
+            store.Object,
+            null, // IOptions<IdentityOptions>
+            null, // IPasswordHasher<TUser>
+            null, // IEnumerable<IUserValidator<TUser>>
+            null, // IEnumerable<IPasswordValidator<TUser>>
+            null, // ILookupNormalizer
+            null, // IdentityErrorDescriber
+            null, // IServiceProvider
+            null  // ILogger<UserManager<TUser>>
+        );
+
+        // SignInManager: ne mock-old, hozz létre valódi példányt, de a függőségeit mock-olhatod
+        var contextAccessor = new Mock<IHttpContextAccessor>();
+        var claimsFactory = new Mock<IUserClaimsPrincipalFactory<AppUser>>();
+        _signInManager = new SignInManager<AppUser>(
+            _userManagerMock.Object,
+            contextAccessor.Object,
+            claimsFactory.Object,
+            null, // IOptions<IdentityOptions>
+            null, // ILogger<SignInManager<TUser>>
+            null, // IAuthenticationSchemeProvider
+            null  // IUserConfirmation<TUser>
+        );
 
         _configMock = new Mock<IConfiguration>();
         _configMock.Setup(c => c["Jwt:Key"]).Returns("this_is_a_super_secret_key_123456");
@@ -34,7 +58,10 @@ public class LoginServiceTests
 
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
 
-        _loginService = new LoginService(_userManagerMock.Object, _httpContextAccessorMock.Object, _singinManagerMock.Object);
+        // inject mocks/objektumok a tesztelendő service-be
+        _loginService = new LoginService(_userManagerMock.Object,
+                                        _httpContextAccessorMock.Object,
+                                        _signInManager);
     }
 
 

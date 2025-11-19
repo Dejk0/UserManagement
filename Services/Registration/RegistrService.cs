@@ -8,7 +8,7 @@ using System.Text;
 using UserManagement;
 using UserManagement.Dtos.Auth;
 
-namespace BabyNameMatcher.Serviceses.Auth
+namespace Services.Registration
 {
     public class RegisterService : ControllerBase
     {

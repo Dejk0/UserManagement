@@ -1,10 +1,11 @@
-﻿using BabyNameMatcher.Serviceses.Auth;
+﻿
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Services.Registration;
 using UserManagement;
 using UserManagement.Dtos.Auth;
 
