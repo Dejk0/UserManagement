@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
@@ -82,16 +83,20 @@ namespace Services.Login
 
         public async Task<LoadUserResultDto> LoadUser()
         {
-            var user = await _userManager.GetUserAsync(User);
             var result = new LoadUserResultDto() { IsValid = false };
-            if (user != null)
+            var httpUser = _httpContextAccessor?.HttpContext?.User;
+            if (httpUser != null)
             {
-                result.IsValid = true;
-                if (User.Identity != null && User.Identity.Name != null)
-                { 
-                    result.UserName = User.Identity.Name; 
+                var user = await _userManager.GetUserAsync(httpUser);
+                if (user != null)
+                {
+                    result.IsValid = true;
+                    if (httpUser.Identity != null && httpUser.Identity.Name != null)
+                    {
+                        result.UserName = httpUser.Identity.Name;
+                    }
                 }
-            }
+            }           
             return result;
         }
 

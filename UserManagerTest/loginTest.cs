@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Services.Login;
+using System;
 using System.Security.Claims;
+using System.Security.Principal;
 using UserManagement;
 using UserManagement.Dtos.Auth;
 
@@ -190,7 +192,11 @@ public class LoginServiceTests
         // UserManager mock: GetUserAsync visszaadja a user-t
         _userManagerMock.Setup(um => um.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
                         .ReturnsAsync(user);
-
+        var context = new DefaultHttpContext
+        {
+            User = claimsPrincipal
+        };
+        _httpContextAccessorMock.Setup(a => a.HttpContext).Returns(context);
         // Service példányosítása
         var loginService = new LoginService(
             _userManagerMock.Object,
