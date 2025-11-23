@@ -212,7 +212,7 @@ public class LoginServiceTests
         var result = await loginService.LoadUser();
 
         // Assert
-        Assert.True(result.IsValid);
+        Assert.True(result.IsAuthenticated);
         Assert.Equal(userName, result.UserName);
     }
 
@@ -231,6 +231,6 @@ public class LoginServiceTests
         var result = await loginService.LoadUser();
 
         // Assert
-        Assert.False(result.IsValid);
+        Assert.False(result.IsAuthenticated);
     }
 }

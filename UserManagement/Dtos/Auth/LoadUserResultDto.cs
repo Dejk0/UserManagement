@@ -5,8 +5,9 @@ using System.Text;
 
 namespace UserManagement.Dtos.Auth
 {
-    public class LoadUserResultDto : BaseValidResponse
+    public class LoadUserResultDto
     {
-        public string UserName { get; set; }
+        public string? Name { get; set; }
+        public bool IsAuthenticated { get; set; }
     }
 }

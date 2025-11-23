@@ -83,17 +83,17 @@ namespace Services.Login
 
         public async Task<LoadUserResultDto> LoadUser()
         {
-            var result = new LoadUserResultDto() { IsValid = false };
+            var result = new LoadUserResultDto() { IsAuthenticated = false };
             var httpUser = _httpContextAccessor?.HttpContext?.User;
             if (httpUser != null)
             {
                 var user = await _userManager.GetUserAsync(httpUser);
                 if (user != null)
                 {
-                    result.IsValid = true;
+                    result.IsAuthenticated = true;
                     if (httpUser.Identity != null && httpUser.Identity.Name != null)
                     {
-                        result.UserName = httpUser.Identity.Name;
+                        result.Name = httpUser.Identity.Name;
                     }
                 }
             }           
