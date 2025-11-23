@@ -45,7 +45,7 @@ namespace Services.Login
                     string token = JWT.GenerateJwtToken(user);
                     return new TokenResponse { Token = token };
                 }
-                else 
+                else
                 {
                     await _signInManager.SignInAsync(user, isPasswordValid);
                     return new TokenResponse { Token = "", IsValid = true };
@@ -77,7 +77,22 @@ namespace Services.Login
                 return new TokenResponse { Token = token, IsValid = true };
             }
 
-            return new TokenResponse { IsValid = true, Message = ["Missing authType"]  };
+            return new TokenResponse { IsValid = true, Message = ["Missing authType"] };
+        }
+
+        public async Task<LoadUserResultDto> LoadUser()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var result = new LoadUserResultDto() { IsValid = false };
+            if (user != null)
+            {
+                result.IsValid = true;
+                if (User.Identity != null && User.Identity.Name != null)
+                { 
+                    result.UserName = User.Identity.Name; 
+                }
+            }
+            return result;
         }
 
         public class TokenResponse : BaseValidResponse

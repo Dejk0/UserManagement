@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
@@ -78,7 +79,7 @@ public class LoginServiceTests
                         .ReturnsAsync(true);
         DataContext.AuthType = Authentication.Type.Jwt;
 
-            // Act
+        // Act
         var result = await _loginService.LoginAsync(loginDto);
 
         // Assert
@@ -173,5 +174,57 @@ public class LoginServiceTests
         // Assert
         Assert.False(string.IsNullOrWhiteSpace(result.Token));
     }
-}
 
+    [Fact]
+    public async Task LoadUserTestSessionReturnName()
+    {
+        // Arrange
+        var userName = "TestUser";
+        var user = new AppUser { Id = "123", UserName = userName, Email = "test@example.com" };
+
+        // ClaimsPrincipal mock
+        var claims = new List<Claim> { new Claim(ClaimTypes.Name, userName) };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        // UserManager mock: GetUserAsync visszaadja a user-t
+        _userManagerMock.Setup(um => um.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
+                        .ReturnsAsync(user);
+
+        // Service példányosítása
+        var loginService = new LoginService(
+            _userManagerMock.Object,
+            _httpContextAccessorMock.Object,
+            _signInManager
+        );
+
+        // HttpContext és ControllerContext mockolása
+        var httpContext = new DefaultHttpContext { User = claimsPrincipal };
+        loginService.ControllerContext = new ControllerContext { HttpContext = httpContext };
+
+        // Act
+        var result = await loginService.LoadUser();
+
+        // Assert
+        Assert.True(result.IsValid);
+        Assert.Equal(userName, result.UserName);
+    }
+
+
+    [Fact]
+    public async Task LoadUserTestReturnFalse()
+    {
+        // Service példányosítása
+        var loginService = new LoginService(
+            _userManagerMock.Object,
+            _httpContextAccessorMock.Object,
+            _signInManager
+        );
+
+        // Act
+        var result = await loginService.LoadUser();
+
+        // Assert
+        Assert.False(result.IsValid);
+    }
+}
