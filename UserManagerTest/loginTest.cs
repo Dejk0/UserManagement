@@ -213,7 +213,7 @@ public class LoginServiceTests
 
         // Assert
         Assert.True(result.IsAuthenticated);
-        Assert.Equal(userName, result.UserName);
+        Assert.Equal(userName, result.Name);
     }
 
 

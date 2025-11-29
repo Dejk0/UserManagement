@@ -76,7 +76,7 @@ namespace UserManagementTests
                 ConfirmPassword = password
             };
 
-            var dto = new RegistrationParamDto { Email = email, Password = password };
+            var dto = new RegistrationParamDto { Email = email, Password = password, ConfirmPassword = password };
 
             _signInManagerMock.Setup(s => s.GetExternalAuthenticationSchemesAsync())
                 .ReturnsAsync(new List<AuthenticationScheme>());
@@ -118,7 +118,7 @@ namespace UserManagementTests
                 ConfirmPassword = password
             };
 
-            var dto = new RegistrationParamDto { Email = email, Password = password };
+            var dto = new RegistrationParamDto { Email = email, Password = password, ConfirmPassword = password };
 
             _signInManagerMock.Setup(s => s.GetExternalAuthenticationSchemesAsync())
                 .ReturnsAsync(new List<AuthenticationScheme>());

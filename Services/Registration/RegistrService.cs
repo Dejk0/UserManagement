@@ -109,6 +109,15 @@ namespace Services.Registration
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
+                if (@params.Password != @params.ConfirmPassword)
+                {
+                    return new RegistrationResultDto
+                    {
+                        Success = false,
+                        Error = "Passwords do not match."
+                    };
+                }
+
                 if (await _userManager.FindByEmailAsync(@params.Email) != null)
                 {
                     return new RegistrationResultDto
@@ -117,6 +126,7 @@ namespace Services.Registration
                         Error = "This email is already taken."
                     };
                 }
+
                 var user = CreateUser();
                 await _userStore.SetUserNameAsync(user, @params.UserName, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, @params.Email, CancellationToken.None);

@@ -9,5 +9,7 @@ namespace UserManagement.Dtos.Auth
     {
         public string? Name { get; set; }
         public bool IsAuthenticated { get; set; }
+
+        public string[]? Roles { get; set; }
     }
 }
