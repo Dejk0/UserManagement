@@ -14,6 +14,7 @@ namespace Services.Registration
     {
         private readonly SignInManager<AppUser> _signInManager;
         private readonly UserManager<AppUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUserStore<AppUser> _userStore;
         private readonly IUserEmailStore<AppUser> _emailStore;
         //private readonly IEmailService _emailService;
@@ -134,6 +135,7 @@ namespace Services.Registration
 
                 if (result.Succeeded)
                 {
+                    await _userManager.AddToRoleAsync(user, "Guest");
                     var userId = await _userManager.GetUserIdAsync(user);
                     var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                     code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
