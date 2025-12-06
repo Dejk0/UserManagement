@@ -4,9 +4,8 @@ using System.Text;
 
 namespace UserManagement.Dtos.Auth
 {
-    public class ChangePasswordParamsDto
+    public class ChangeUsernameParamsDto
     {
-        public string CurrentPassword { get; set; }
-        public string NewPassword { get; set; }
+        public string NewName { get; set; }
     }
 }

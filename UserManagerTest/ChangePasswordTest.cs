@@ -15,6 +15,7 @@ public class ChangePasswordServiceTests
     private readonly Mock<UserManager<AppUser>> _userManagerMock;
     private readonly Mock<IHttpContextAccessor> _httpContextAccessorMock;
     private readonly ChangePasswordService _service;
+    private readonly DefaultHttpContext _testHttpContext;
 
     public ChangePasswordServiceTests()
     {
@@ -25,24 +26,35 @@ public class ChangePasswordServiceTests
 
         _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
 
+        // Use a shared DefaultHttpContext so tests can modify User without reconfiguring Moq setups
+        _testHttpContext = new DefaultHttpContext();
+        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(_testHttpContext);
+
+        // default authenticated user for all tests (can be overridden in individual tests)
+        var defaultClaims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "default-user-id")
+        };
+        var defaultIdentity = new ClaimsIdentity(defaultClaims, "TestAuth");
+        var defaultPrincipal = new ClaimsPrincipal(defaultIdentity);
+        _testHttpContext.User = defaultPrincipal;
+
         _service = new ChangePasswordService(_userManagerMock.Object, _httpContextAccessorMock.Object);
     }
 
-    private void SetUser(string email)
+    private void SetUser(string id)
     {
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, email)
+            // NameIdentifier should contain the user id when using UserManager.GetUserAsync
+            new Claim(ClaimTypes.NameIdentifier, id)
         };
-        var identity = new ClaimsIdentity(claims);
+        // mark identity as authenticated by providing an authentication type
+        var identity = new ClaimsIdentity(claims, "TestAuth");
         var claimsPrincipal = new ClaimsPrincipal(identity);
 
-        var httpContext = new DefaultHttpContext
-        {
-            User = claimsPrincipal
-        };
-
-        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
+        // Update shared test HttpContext's User
+        _testHttpContext.User = claimsPrincipal;
     }
 
     private (UserManager<AppUser>, Mock<IUserPasswordStore<AppUser>>) CreateRealUserManager()
@@ -72,9 +84,8 @@ public class ChangePasswordServiceTests
     [Fact]
     public async Task ChangePasswordAsync_ReturnsUnauthorized_IfNoUserClaim()
     {
-        // Arrange
-        var httpContext = new DefaultHttpContext(); // no user
-        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
+        // Arrange: simulate no authenticated user by clearing principal
+        _testHttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
 
         var dto = new ChangePasswordParamsDto();
 
@@ -83,16 +94,17 @@ public class ChangePasswordServiceTests
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Equal("No user claim found.", result.Message[0]);
+        Assert.Equal("No authenticated user.", result.Message[0]);
     }
 
     [Fact]
     public async Task ChangePasswordAsync_ReturnsError_IfUserNotFound()
     {
         // Arrange
-        SetUser("test@example.com");
+        SetUser("nonexistent-id");
 
-        _userManagerMock.Setup(x => x.FindByEmailAsync("test@example.com"))
+        // Ensure GetUserAsync returns null
+        _userManagerMock.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
                         .ReturnsAsync((AppUser)null);
 
         var dto = new ChangePasswordParamsDto();
@@ -114,6 +126,7 @@ public class ChangePasswordServiceTests
 
         var user = new AppUser
         {
+            Id = "1",
             Email = "user@example.com",
             UserName = "Tamas"
         };
@@ -121,11 +134,11 @@ public class ChangePasswordServiceTests
         // Valódi jelszó beállítása
         user.PasswordHash = new PasswordHasher<AppUser>().HashPassword(user, "correctPassword");
 
-        // Claims beállítása
+        // Claims beállítása: use user id
         var claims = new List<Claim>
-{
-    new Claim(ClaimTypes.NameIdentifier, "user@example.com")
-};
+        {
+            new Claim(ClaimTypes.NameIdentifier, "1")
+        };
         var identity = new ClaimsIdentity(claims, "TestAuth");
         var claimsPrincipal = new ClaimsPrincipal(identity);
 
@@ -135,18 +148,9 @@ public class ChangePasswordServiceTests
         };
         httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
 
-        // Store mockok
-        storeMock.As<IUserEmailStore<AppUser>>()
-.Setup(x => x.FindByEmailAsync("USER@EXAMPLE.COM", It.IsAny<CancellationToken>()))
-.ReturnsAsync(user);
-
-        storeMock.As<IUserEmailStore<AppUser>>()
-            .Setup(x => x.GetEmailAsync(user, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("user@example.com");
-
-        storeMock.As<IUserEmailStore<AppUser>>()
-            .Setup(x => x.GetNormalizedEmailAsync(user, It.IsAny<CancellationToken>()))
-            .ReturnsAsync("USER@EXAMPLE.COM");
+        // Store mock: FindByIdAsync should return the user when GetUserAsync is called
+        storeMock.Setup(x => x.FindByIdAsync("1", It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(user);
 
         // Password-related metódusok
         storeMock.Setup(x => x.SetPasswordHashAsync(user, It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -180,9 +184,9 @@ public class ChangePasswordServiceTests
     {
         // Arrange
         var user = new AppUser();
-        SetUser("user@example.com");
+        SetUser("user-id");
 
-        _userManagerMock.Setup(x => x.FindByEmailAsync("user@example.com"))
+        _userManagerMock.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
                         .ReturnsAsync(user);
 
         _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "old", "new"))

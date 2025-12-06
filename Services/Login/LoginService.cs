@@ -91,10 +91,13 @@ namespace Services.Login
                 if (user != null)
                 {
                     result.IsAuthenticated = true;
-                    if (httpUser.Identity != null && httpUser.Identity.Name != null)
+                    if (httpUser.Identity != null && user.UserName != null)
                     {
-                        result.Name = httpUser.Identity.Name;
+                        result.Name = user.UserName;
                     }
+
+                    var roles = await _userManager.GetRolesAsync(user) ?? new List<string>();
+                    result.Roles = roles.Count > 0 ? roles.ToArray() : Array.Empty<string>();
                 }
             }           
             return result;

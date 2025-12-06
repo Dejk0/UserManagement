@@ -5,20 +5,20 @@ using System.Security.Claims;
 using UserManagement;
 using UserManagement.Dtos.Auth;
 
-namespace Services.ChangePassword;
+namespace Services.ChangeUsername;
 
-public class ChangePasswordService : ControllerBase
+public class ChangeUsernameService : ControllerBase
 {
     private readonly UserManager<AppUser> _userManager;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public ChangePasswordService(UserManager<AppUser> userManager, IHttpContextAccessor httpContextAccessor)
+    public ChangeUsernameService(UserManager<AppUser> userManager, IHttpContextAccessor httpContextAccessor)
     {
         _userManager = userManager;
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<BaseValidResponse> ChangePasswordAsync(ChangePasswordParamsDto @params)
+    public async Task<BaseValidResponse> ChangesUsernameAsync(ChangeUsernameParamsDto @params)
     {
         var principal = _httpContextAccessor.HttpContext?.User;
         if (principal == null || !principal.Identity?.IsAuthenticated == true)
@@ -28,19 +28,7 @@ public class ChangePasswordService : ControllerBase
         if (user == null)
             return new BaseValidResponse { IsValid = false, Message = new[] { "User not found." } };
 
-        if (string.IsNullOrWhiteSpace(@params.NewPassword))
-            return new BaseValidResponse { IsValid = false, Message = new[] { "New password cannot be empty." } };
-
-        if (await _userManager.CheckPasswordAsync(user, @params.NewPassword))
-        {
-            return new BaseValidResponse
-            {
-                IsValid = false,
-                Message = new[] { "the new password cannot be as the old." }
-            };
-        }
-
-        var result = await _userManager.ChangePasswordAsync(user, @params.CurrentPassword, @params.NewPassword);
+        var result = await _userManager.SetUserNameAsync(user, @params.NewName);
         if (!result.Succeeded)
             return new BaseValidResponse { IsValid = false, Message = result.Errors.Select(e => e.Description).ToArray() };
 

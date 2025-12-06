@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -232,5 +231,53 @@ public class LoginServiceTests
 
         // Assert
         Assert.False(result.IsAuthenticated);
+    }
+
+    [Fact]
+    public async Task LoadUser_ReflectsNameChange()
+    {
+        // Arrange - initial user and principal with old name
+        var oldName = "OldName";
+        var newName = "NewName";
+        var user = new AppUser { Id = "123", UserName = oldName, Email = "test@example.com" };
+
+        var claimsOld = new List<Claim> { new Claim(ClaimTypes.Name, oldName) };
+        var identityOld = new ClaimsIdentity(claimsOld, "TestAuth");
+        var principalOld = new ClaimsPrincipal(identityOld);
+
+        var contextOld = new DefaultHttpContext { User = principalOld };
+        _httpContextAccessorMock.Setup(a => a.HttpContext).Returns(contextOld);
+
+        _userManagerMock.Setup(um => um.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
+                        .ReturnsAsync(user);
+
+        // Act - first load
+        var result1 = await _loginService.LoadUser();
+
+        // Assert first
+        Assert.True(result1.IsAuthenticated);
+        Assert.Equal(oldName, result1.Name);
+
+        // Simulate username change: update user and ClaimsPrincipal
+        user.UserName = newName;
+
+        var claimsNew = new List<Claim> { new Claim(ClaimTypes.Name, newName) };
+        var identityNew = new ClaimsIdentity(claimsNew, "TestAuth");
+        var principalNew = new ClaimsPrincipal(identityNew);
+        var contextNew = new DefaultHttpContext { User = principalNew };
+
+        // Reconfigure HttpContextAccessor to return updated principal
+        _httpContextAccessorMock.Setup(a => a.HttpContext).Returns(contextNew);
+
+        // Ensure UserManager still returns the same (now-updated) user
+        _userManagerMock.Setup(um => um.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
+                        .ReturnsAsync(user);
+
+        // Act - second load
+        var result2 = await _loginService.LoadUser();
+
+        // Assert second
+        Assert.True(result2.IsAuthenticated);
+        Assert.Equal(newName, result2.Name);
     }
 }
