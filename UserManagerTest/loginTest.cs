@@ -280,4 +280,63 @@ public class LoginServiceTests
         Assert.True(result2.IsAuthenticated);
         Assert.Equal(newName, result2.Name);
     }
+
+    [Fact]
+    public async Task LoadUser_IncludesRolesAndEngines()
+    {
+        // Arrange
+        var userName = "TestUser";
+        var engines = new bool[] { true, false, true };
+        var user = new AppUser { Id = "123", UserName = userName, Email = "test@example.com", MotorokViewAccess = engines };
+
+        var claims = new List<Claim> { new Claim(ClaimTypes.Name, userName) };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _httpContextAccessorMock.Setup(a => a.HttpContext).Returns(new DefaultHttpContext { User = claimsPrincipal });
+        _userManagerMock.Setup(um => um.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        _userManagerMock.Setup(um => um.GetRolesAsync(user)).ReturnsAsync(new List<string> { "Admin", "User" });
+
+        var loginService = new LoginService(_userManagerMock.Object, _httpContextAccessorMock.Object, _signInManager);
+
+        // Act
+        var result = await loginService.LoadUser();
+
+        // Assert
+        Assert.True(result.IsAuthenticated);
+        Assert.Equal(userName, result.Name);
+        Assert.NotNull(result.Roles);
+        Assert.Contains("Admin", result.Roles);
+        Assert.NotNull(result.Engines);
+        Assert.Equal(3, result.Engines.Length);
+        Assert.True(result.Engines[0]);
+    }
+
+    [Fact]
+    public async Task LoadUser_HandlesNullEnginesAndEmptyRoles()
+    {
+        // Arrange: user with null engines and no roles
+        var userName = "NoRolesUser";
+        var user = new AppUser { Id = "456", UserName = userName, Email = "nr@example.com", MotorokViewAccess = null };
+
+        var claims = new List<Claim> { new Claim(ClaimTypes.Name, userName) };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _httpContextAccessorMock.Setup(a => a.HttpContext).Returns(new DefaultHttpContext { User = claimsPrincipal });
+        _userManagerMock.Setup(um => um.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        _userManagerMock.Setup(um => um.GetRolesAsync(user)).ReturnsAsync(new List<string>());
+
+        var loginService = new LoginService(_userManagerMock.Object, _httpContextAccessorMock.Object, _signInManager);
+
+        // Act
+        var result = await loginService.LoadUser();
+
+        // Assert
+        Assert.True(result.IsAuthenticated);
+        Assert.Equal(userName, result.Name);
+        Assert.NotNull(result.Roles);
+        Assert.Empty(result.Roles);
+        Assert.Null(result.Engines);
+    }
 }

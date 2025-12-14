@@ -98,6 +98,11 @@ namespace Services.Login
 
                     var roles = await _userManager.GetRolesAsync(user) ?? new List<string>();
                     result.Roles = roles.Count > 0 ? roles.ToArray() : Array.Empty<string>();
+
+                    var engines = user.MotorokViewAccess;
+                    result.Engines = engines;
+                    result.Tokens = user.Tokens;
+                    result.HasEngine = user.Motorok is not null;
                 }
             }           
             return result;
