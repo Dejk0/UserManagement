@@ -10,5 +10,6 @@ namespace UserManagement
         public bool[]? MaterialStrengthViewAccess { get; set; } = new bool[14];
         public int Tokens { get; set; }
         public string? Role { get; set; }
+        public bool ChangeingPassword { get; set; } =false;
     }
 }

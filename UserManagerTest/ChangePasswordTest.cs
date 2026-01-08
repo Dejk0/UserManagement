@@ -205,4 +205,80 @@ public class ChangePasswordServiceTests
         Assert.True(result.IsValid);
         Assert.Equal(null, result.Message);
     }
+
+    [Fact]
+    public async Task ChangePasswordNoAuthAsync_ReturnsUnauthorized_IfNoUserClaim()
+    {
+        // Arrange
+        var httpContext = new DefaultHttpContext(); // no user
+        _httpContextAccessorMock.Setup(x => x.HttpContext).Returns(httpContext);
+
+        var dto = new ChangePasswordParamsDto();
+
+        // Act
+        var result = await _service.ChangePasswordNoAuthAsync(dto);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Equal("No authenticated user.", result.Message[0]);
+    }
+
+    [Fact]
+    public async Task ChangePasswordNoAuthAsync_ReturnsSuccess_IfSuccessful()
+    {
+        // Arrange
+        var user = new AppUser();
+        SetUser("user-id");
+
+        _userManagerMock.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>()))
+                        .ReturnsAsync(user);
+
+        _userManagerMock.Setup(x => x.ChangePasswordAsync(user, "old", "new"))
+                        .ReturnsAsync(IdentityResult.Success);
+
+        var dto = new ChangePasswordParamsDto
+        {
+            CurrentPassword = "old",
+            NewPassword = "new"
+        };
+
+        // Act
+        var result = await _service.ChangePasswordNoAuthAsync(dto);
+
+        // Assert
+        Assert.True(result.IsValid);
+        Assert.Null(result.Message);
+    }
+
+    [Fact]
+    public async Task SandingChangePasswordEmail_ReturnsError_IfUserNotFound()
+    {
+        // Arrange
+        _userManagerMock.Setup(x => x.FindByEmailAsync("notfound@example.com"))
+                        .ReturnsAsync((AppUser)null);
+
+        // Act
+        var result = await _service.SandingChangePasswordEmail("notfound@example.com");
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Equal("User not found.", result.Message[0]);
+    }
+
+    [Fact]
+    public async Task SandingChangePasswordEmail_ReturnsSuccess_WhenUserExists()
+    {
+        // Arrange
+        var user = new AppUser { Email = "user@example.com", UserName = "Test" };
+        _userManagerMock.Setup(x => x.FindByEmailAsync("user@example.com")).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+
+        // Act
+        var result = await _service.SandingChangePasswordEmail("user@example.com");
+
+        // Assert
+        Assert.True(result.IsValid);
+        _userManagerMock.Verify(x => x.UpdateAsync(user), Times.Once);
+        Assert.Contains(user.Id, result.Message[0]);
+    }
 }
